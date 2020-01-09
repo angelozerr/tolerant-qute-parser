@@ -245,4 +245,17 @@ public class MultiLineStream {
 		}
 		return posNow;
 	}
+
+	/**
+	 * Will advance the stream position until ch or '{'
+	 */
+	public boolean advanceUntilCharOrNewTag(int ch) {
+		while (this.position < this.len) {
+			if (peekChar() == ch || peekChar() == '{') {
+				return true;
+			}
+			this.advance(1);
+		}
+		return false;
+	}
 }

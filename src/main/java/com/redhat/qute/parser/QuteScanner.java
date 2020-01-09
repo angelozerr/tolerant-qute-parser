@@ -1,6 +1,12 @@
 package com.redhat.qute.parser;
 
+import java.util.function.Predicate;
+
 public class QuteScanner implements Scanner {
+
+	private static final Predicate<Character> TAG_NAME_PREDICATE = ch -> {
+		return Character.isLetter(ch);
+	};
 
 	public static Scanner createScanner(String input) {
 		return createScanner(input, 0);
@@ -51,13 +57,38 @@ public class QuteScanner implements Scanner {
 
 		String errorMessage = null;
 		switch (state) {
+
 		case WithinContent: {
 			if (stream.advanceIfChar('{')) {
-				state = ScannerState.WithinExpression;
-				return finishToken(offset, TokenType.StartExpression);
+				if (!stream.eos() && stream.peekChar() == '!') {
+					// Comment
+					state = ScannerState.WithinComment;
+					return finishToken(offset, TokenType.StartComment);
+
+				} else if (!stream.eos() && stream.peekChar() == '#') {
+					// Section tag
+					state = ScannerState.AfterOpeningStartTag;
+					return finishToken(offset, TokenType.StartTagOpen);
+				} else if (stream.advanceIfChar('/')) {
+					state = ScannerState.AfterOpeningEndTag;
+					return finishToken(offset, TokenType.EndTagOpen);
+				} else {
+					// Expression
+					state = ScannerState.WithinExpression;
+					return finishToken(offset, TokenType.StartExpression);
+				}
 			}
 			stream.advanceUntilChar('{');
 			return finishToken(offset, TokenType.Content);
+		}
+
+		case WithinComment: {
+			if (stream.advanceIfChars('!', '}')) {
+				state = ScannerState.WithinContent;
+				return finishToken(offset, TokenType.EndComment);
+			}
+			stream.advanceUntilChars('!', '}');
+			return finishToken(offset, TokenType.Comment);
 		}
 
 		case WithinExpression: {
@@ -73,10 +104,63 @@ public class QuteScanner implements Scanner {
 			return finishToken(offset, TokenType.Expression);
 		}
 
+		case AfterOpeningStartTag: {
+			if (hasNextTagName()) {
+				state = ScannerState.WithinTag;
+				return finishToken(offset, TokenType.StartTag);
+			}
+			if (stream.skipWhitespace()) { // white space is not valid here
+				return finishToken(offset, TokenType.Whitespace, "Tag name must directly follow the open bracket.");
+			}
+			state = ScannerState.WithinTag;
+			if (stream.advanceUntilCharOrNewTag('}')) {
+				if (stream.peekChar() == '{') {
+					state = ScannerState.WithinContent;
+				}
+				return internalScan();
+			}
+			return finishToken(offset, TokenType.Unknown);
+		}
+
+		case WithinTag: {
+			if (stream.skipWhitespace()) {
+				return finishToken(offset, TokenType.Whitespace);
+			}
+
+			if (stream.advanceIfChar('/')) { // /
+				state = ScannerState.WithinTag;
+				if(stream.advanceIfChar('}')) {
+					state = ScannerState.WithinContent;
+					return finishToken(offset, TokenType.StartTagSelfClose);
+				}
+				return finishToken(offset, TokenType.Unknown);
+			}
+			/*int c = stream.peekChar();
+			if (c == _DQO || c == _SIQ) { // " || '
+				state = ScannerState.BeforeAttributeValue;
+				return internalScan();
+			}*/
+
+			if (stream.advanceIfChar('}')) { // >
+				state = ScannerState.WithinContent;
+				return finishToken(offset, TokenType.StartTagClose);
+			}
+
+			if (stream.advanceUntilChar('{')) { // <
+				state = ScannerState.WithinContent;
+				return internalScan();
+			}
+			return finishToken(offset, TokenType.Unknown);
+		}
+
 		default:
 		}
 		stream.advance(1);
 		return finishToken(offset, TokenType.Unknown, errorMessage);
+	}
+
+	private boolean hasNextTagName() {
+		return stream.advanceWhileChar(TAG_NAME_PREDICATE) > 0;
 	}
 
 	TokenType finishToken(int offset, TokenType type) {

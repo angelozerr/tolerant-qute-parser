@@ -7,8 +7,10 @@ import com.redhat.qute.parser.TokenType;
 public class QuteParserTest {
 
 	public static void main(String[] args) {
-		scan("Hello {name}!");
-		scan("Hello {name!");
+		// scan("{! This is a comment !}");
+		scan("{#if item.price > 100}");
+		// scan("Hello {name}!");
+		// scan("Hello {name!");
 	}
 
 	private static void scan(String content) {
