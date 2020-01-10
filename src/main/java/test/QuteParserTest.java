@@ -26,18 +26,19 @@ public class QuteParserTest {
 
 	private static void parse(String content) {
 		Template template = QuteParser.parse(content);
-		display(template, 0);
+		display(template, 0, content);
 	}
 
-	private static void display(Node node, int indent) {
+	private static void display(Node node, int indent, String content) {
 		StringBuilder indentText = new StringBuilder();
 		for (int i = 0; i < indent; i++) {
 			indentText.append('\t');
 		}
+		String nodeContent = content.substring(node.getStart(), node.getEnd());
 		System.err.println(indentText.toString() + node.getKind() + " at (" + node.getStart() + "," + node.getEnd()
 				+ ")" + ", closed=" + node.isClosed());
 		for (Node child : node.getChildren()) {
-			display(child, indent + 1);
+			display(child, indent + 1, content);
 		}
 	}
 }

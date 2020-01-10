@@ -190,7 +190,7 @@ public class QuteScanner implements Scanner {
 			}
 
 			stream.advanceUntilChars('}');
-			return finishToken(offset, TokenType.Expression);
+			return finishToken(offset, TokenType.ParameterTag);
 		}
 
 		default:
