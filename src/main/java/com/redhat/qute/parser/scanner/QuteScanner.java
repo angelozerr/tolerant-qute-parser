@@ -1,4 +1,4 @@
-package com.redhat.qute.parser;
+package com.redhat.qute.parser.scanner;
 
 import java.util.function.Predicate;
 
@@ -61,17 +61,22 @@ public class QuteScanner implements Scanner {
 		case WithinContent: {
 			if (stream.advanceIfChar('{')) {
 				if (!stream.eos() && stream.peekChar() == '!') {
-					// Comment
+					// Comment -> {! This is a comment !}
 					state = ScannerState.WithinComment;
 					return finishToken(offset, TokenType.StartComment);
 
-				} else if (!stream.eos() && stream.peekChar() == '#') {
-					// Section tag
+				} else if (stream.advanceIfChar('#')) {
+					// Section (start) tag -> {#if
 					state = ScannerState.AfterOpeningStartTag;
 					return finishToken(offset, TokenType.StartTagOpen);
 				} else if (stream.advanceIfChar('/')) {
+					// Section (end) tag -> {/if}
 					state = ScannerState.AfterOpeningEndTag;
 					return finishToken(offset, TokenType.EndTagOpen);
+				} else if (stream.advanceIfChar('@')) {
+					// Parameter declaration -> {@org.acme.Foo foo}
+					state = ScannerState.WithinParameterDeclaration;
+					return finishToken(offset, TokenType.StartParameterDeclaration);
 				} else {
 					// Expression
 					state = ScannerState.WithinExpression;
@@ -89,6 +94,19 @@ public class QuteScanner implements Scanner {
 			}
 			stream.advanceUntilChars('!', '}');
 			return finishToken(offset, TokenType.Comment);
+		}
+
+		case WithinParameterDeclaration: {
+			if (stream.skipWhitespace()) {
+				return finishToken(offset, TokenType.Whitespace);
+			}
+
+			if (stream.advanceIfChar('}')) {
+				state = ScannerState.WithinContent;
+				return finishToken(offset, TokenType.EndParameterDeclaration);
+			}
+			stream.advanceUntilChars('}');
+			return finishToken(offset, TokenType.ParameterDeclaration);
 		}
 
 		case WithinExpression: {
@@ -122,35 +140,57 @@ public class QuteScanner implements Scanner {
 			return finishToken(offset, TokenType.Unknown);
 		}
 
+		case AfterOpeningEndTag:
+			if (hasNextTagName()) {
+				state = ScannerState.WithinEndTag;
+				return finishToken(offset, TokenType.EndTag);
+			}
+			if (stream.skipWhitespace()) { // white space is not valid here
+				return finishToken(offset, TokenType.Whitespace, "Tag name must directly follow the open bracket.");
+			}
+			state = ScannerState.WithinEndTag;
+			if (stream.advanceUntilCharOrNewTag('}')) {
+				if (stream.peekChar() == '{') {
+					state = ScannerState.WithinContent;
+				}
+				return internalScan();
+			}
+			return finishToken(offset, TokenType.Unknown);
+
+		case WithinEndTag:
+			if (stream.skipWhitespace()) { // white space is valid here
+				return finishToken(offset, TokenType.Whitespace);
+			}
+			if (stream.advanceIfChar('}')) {
+				state = ScannerState.WithinContent;
+				return finishToken(offset, TokenType.EndTagClose);
+			}
+			if (stream.advanceUntilChar('{')) {
+				state = ScannerState.WithinContent;
+				return internalScan();
+			}
+			return finishToken(offset, TokenType.Whitespace);
+
 		case WithinTag: {
 			if (stream.skipWhitespace()) {
 				return finishToken(offset, TokenType.Whitespace);
 			}
 
-			if (stream.advanceIfChar('/')) { // /
+			if (stream.advanceIfChar('/')) {
 				state = ScannerState.WithinTag;
-				if(stream.advanceIfChar('}')) {
+				if (stream.advanceIfChar('}')) {
 					state = ScannerState.WithinContent;
 					return finishToken(offset, TokenType.StartTagSelfClose);
 				}
 				return finishToken(offset, TokenType.Unknown);
 			}
-			/*int c = stream.peekChar();
-			if (c == _DQO || c == _SIQ) { // " || '
-				state = ScannerState.BeforeAttributeValue;
-				return internalScan();
-			}*/
-
-			if (stream.advanceIfChar('}')) { // >
+			if (stream.advanceIfChar('}')) {
 				state = ScannerState.WithinContent;
 				return finishToken(offset, TokenType.StartTagClose);
 			}
 
-			if (stream.advanceUntilChar('{')) { // <
-				state = ScannerState.WithinContent;
-				return internalScan();
-			}
-			return finishToken(offset, TokenType.Unknown);
+			stream.advanceUntilChars('}');
+			return finishToken(offset, TokenType.Expression);
 		}
 
 		default:

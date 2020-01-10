@@ -1,4 +1,4 @@
-package com.redhat.qute.parser;
+package com.redhat.qute.parser.scanner;
 
 public enum TokenType {
 
@@ -15,9 +15,16 @@ public enum TokenType {
 	// Section tag token types
 	StartTagOpen, //
 	StartTag, //
-	EndTagOpen, //
 	StartTagSelfClose, //
 	StartTagClose, //
+	EndTagOpen, //
+	EndTag, //
+	EndTagClose, //
+
+	// Parameter declaration
+	StartParameterDeclaration, //
+	ParameterDeclaration, //
+	EndParameterDeclaration, //
 
 	// Other token types
 	Content, //

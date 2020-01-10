@@ -1,10 +1,14 @@
-package com.redhat.qute.parser;
+package com.redhat.qute.parser.scanner;
 
 public enum ScannerState {
 	WithinContent, //
 	WithinExpression, //
 	WithinComment, //
+
 	AfterOpeningStartTag, //
 	WithinTag, //
-	AfterOpeningEndTag;
+	AfterOpeningEndTag, //
+	WithinEndTag, //
+
+	WithinParameterDeclaration;
 }

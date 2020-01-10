@@ -8,7 +8,7 @@
  *  Contributors:
  *  Angelo Zerr <angelo.zerr@gmail.com> - initial API and implementation
  */
-package com.redhat.qute.parser;
+package com.redhat.qute.parser.scanner;
 
 /**
  * Scanner API.
