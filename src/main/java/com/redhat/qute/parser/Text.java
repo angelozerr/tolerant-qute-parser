@@ -1,14 +1,15 @@
 package com.redhat.qute.parser;
 
-public class Template extends Node {
+public class Text extends Node {
 
-	Template(int start, int end) {
+	Text(int start, int end) {
 		super(start, end);
 		super.setClosed(true);
 	}
 
 	@Override
 	public NodeKind getKind() {
-		return NodeKind.Template;
+		return NodeKind.Text;
 	}
+
 }
