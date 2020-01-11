@@ -30,4 +30,9 @@ public class Comment extends Node {
 	void setEndContent(int endContent) {
 		this.endContent = endContent;
 	}
+	
+	@Override
+	public String getNodeName() {
+		return "#comment";
+	}
 }

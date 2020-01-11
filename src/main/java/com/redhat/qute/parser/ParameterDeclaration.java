@@ -30,4 +30,8 @@ public class ParameterDeclaration extends Node {
 	void setEndContent(int endContent) {
 		this.endContent = endContent;
 	}
+	
+	public String getNodeName() {
+		return "#parameter-declaration";
+	}
 }

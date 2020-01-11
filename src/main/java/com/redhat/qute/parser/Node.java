@@ -63,4 +63,6 @@ public abstract class Node {
 		return children;
 	}
 
+	public abstract String getNodeName();
+
 }

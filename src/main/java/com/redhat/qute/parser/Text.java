@@ -12,4 +12,8 @@ public class Text extends Node {
 		return NodeKind.Text;
 	}
 
+	@Override
+	public String getNodeName() {
+		return "#text";
+	}
 }

@@ -30,4 +30,8 @@ public class Expression extends Node {
 	void setEndExpression(int endExpression) {
 		this.endExpression = endExpression;
 	}
+	
+	public String getNodeName() {
+		return "#expression";
+	}
 }

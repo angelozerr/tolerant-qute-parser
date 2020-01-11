@@ -11,4 +11,8 @@ public class Template extends Node {
 	public NodeKind getKind() {
 		return NodeKind.Template;
 	}
+	
+	public String getNodeName() {
+		return "#template";
+	}
 }

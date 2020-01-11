@@ -70,4 +70,9 @@ public class SectionTag extends Node {
 	void setSelfClosed(boolean selfClosed) {
 		this.selfClosed = selfClosed;
 	}
+	
+	@Override
+	public String getNodeName() {
+		return "#" + getTag();
+	}
 }

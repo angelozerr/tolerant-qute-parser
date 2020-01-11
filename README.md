@@ -46,6 +46,46 @@ Template at (0,13), closed=true
 
 See [QuteParserTest.java](https://github.com/angelozerr/tolerant-qute-parser/blob/master/src/main/java/test/QuteParserTest.java)
 
+The AST node have start/end position but for some node, you can have other information like for section tag:
+
+ * start/end of the open section tag (ex : {#if  ... }
+ * start/end of the close section tag (ex : {\if}
+
+# Validator 
+
+As parser is tolerant, it build an AST even if there are some errors. See [QuteParserValidator.java](https://github.com/angelozerr/tolerant-qute-parser/blob/master/src/main/java/test/QuteParserValidator.java) to see it in action
+
+```java
+public static void main(String[] args) {		
+	validate("{#if } {#each }");
+}
+
+private static void validate(String content) {
+	Template template = QuteParser.parse(content);
+	System.err.println("Validate --> " + content);
+	Node parent = template;
+	validate(parent);
+}
+
+private static void validate(Node parent) {
+	if (!parent.isClosed()) {
+		System.err.println(parent.getKind() + parent.getNodeName() + " (from,to) (" + parent.getStart() + ","
+				+ parent.getEnd() + ") is not closed");
+	}
+	for (Node child : parent.getChildren()) {
+		validate(child);
+	}
+}
+```
+
+display 2 errors:
+
+```java
+Validate --> {#if } {#each }
+SectionTag#if (from,to) (0,15) is not closed
+SectionTag#each (from,to) (7,15) is not closed
+```
+
 # Limitation
 
  * works only with String (not with Reader). 
